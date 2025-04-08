@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+# deploy
+deploy/
+env.zip
+
