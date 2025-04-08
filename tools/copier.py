@@ -12,7 +12,7 @@ from io import StringIO
 from datetime import datetime
 
 __builder__ = 'zoombuild'
-__version__  = 0,1,0
+__version__  = 0,1,2
 METADATA_FILE = 'environment.ini'
 DEPLOY_KEY = 'deploy'
 FOLDER_KEY = 'folder'
@@ -21,7 +21,6 @@ CHECKSUM_KEY = 'checksum'
 logging.basicConfig()
 logger = logging.getLogger("zoombuild")
 logger.setLevel(logging.INFO)
-logger.info("! init")
 
 unzipper = f"""
 import os
@@ -34,21 +33,22 @@ import configparser
 zip = os.path.dirname(__file__)
 cfg = configparser.ConfigParser()
 with zipfile.ZipFile(zip, "r") as archive:
-    with archive.open({METADATA_FILE}, 'r') as handle:
-        cfg.read(handle)
+    with archive.open('{METADATA_FILE}', 'r') as handle:
+        data = handle.read().decode('utf-8')
+        cfg.read_string(data)
     print (cfg)
-    deploy_path = cfg[{DEPLOY_KEY}][{FOLDER_KEY}]
-    checksum = cfg[{DEPLOY_KEY}][{CHECKSUM_KEY}]
+    deploy_path = cfg['{DEPLOY_KEY}']['{FOLDER_KEY}']
+    checksum = cfg['{DEPLOY_KEY}']['{CHECKSUM_KEY}']
         
 if not os.path.isdir(deploy_path):
     print ("fresh deployment, unpacking into " + deploy_path)
     shutil.unpack_archive(zip, deploy_path)
     sys.exit(0)
 else:
-    parser = configparser.ConfigParser
-    checksum_file = os.path.join(deploy_path, {METADATA_FILE})
+    parser = configparser.ConfigParser()
+    checksum_file = os.path.join(deploy_path, '{METADATA_FILE}')
     parser.read(checksum_file)
-    saved_checksum = parser[{DEPLOY_KEY}][{CHECKSUM_KEY}]
+    saved_checksum = parser['{DEPLOY_KEY}']['{CHECKSUM_KEY}']
     print("zip checksum", checksum, "disk checksum", saved_checksum)
     if (checksum == saved_checksum):
         print ("dependencies unchanged")
@@ -63,11 +63,14 @@ else:
 
 def validate_zip(checksum, zip):
     with zipfile.ZipFile(zip, "r") as archive:
-        with archive.open("checksum", "r") as cs:
-            parser = configparser.ConfigParser()
-            parser.read(cs)
+        parser = configparser.ConfigParser()
+        with archive.open(METADATA_FILE, "r") as cs:
+            data = cs.read().decode('utf-8')
+            parser.read_string(data)
             zip_checksum = parser[DEPLOY_KEY][CHECKSUM_KEY]
-        return zip_checksum == checksum
+
+            archive_version = parser['metadata']['version']
+        return zip_checksum == checksum and archive_version == str(__version__)
     
 
 def collect_requirements():
@@ -106,7 +109,7 @@ def archive_venv(envlocation = ".venv", output = "./env.zip", deploy_folder = "d
             logger.info("no new vendored dependencies, complete")
             sys.exit(0)
         else:
-            logger.warning("dependencies have changed")
+            logger.warning("dependencies or version have changed")
             os.remove(target_zip)
     try:
         with zipfile.ZipFile(target_zip, "w") as archive:
@@ -156,6 +159,4 @@ def archive_venv(envlocation = ".venv", output = "./env.zip", deploy_folder = "d
     
 
 if __name__ == '__main__':
-    print ("! invoke")
-    print (archive_venv)
-    print(archive_venv())
+    archive_venv()
