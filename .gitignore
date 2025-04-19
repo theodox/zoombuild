@@ -11,5 +11,5 @@ wheels/
 
 # deploy
 deploy/
-env.zip
+*.zip
 

@@ -70,4 +70,6 @@ def find_resource_files(source_tree):
 if __name__ == "__main__":
     if os.path.exists("test.zip"):
         os.remove("test.zip")
+
+    # todo: proper CLI
     compile_tree("src", "test.zip", optimize=1)

@@ -7,8 +7,8 @@ import zlib
 import compileall
 import logging
 import sys
-import shutil
 import configparser
+import click
 from io import StringIO
 from datetime import datetime
 
@@ -166,6 +166,41 @@ def archive_venv(envlocation = ".venv", output = "./env.zip", deploy_folder = "d
 
     
 
+@click.command(help="Package virtual environment into a deployable zip file")
+@click.option(
+    "--env", 
+    default=".venv", 
+    help="Path to the virtual environment (default: .venv)"
+)
+@click.option(
+    "--output", 
+    default="./env.zip", 
+    help="Output path for the zip file (default: ./env.zip)"
+)
+@click.option(
+    "--deploy-folder", 
+    default="deploy", 
+    help="Target folder name for deployment (default: deploy)"
+)
+@click.option(
+    "--verbose",
+    is_flag=True,
+    help="Increase logging verbosity"
+)
+def main(env, output, deploy_folder, verbose):
+    """
+    Package a virtual environment into a self-extracting zip file.
+    
+    This tool creates a deployable zip with all dependencies from the virtual environment.
+    The zip file contains a __main__.py script that handles extraction and updates.
+    """
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+        
+    logger.info(f"Packaging environment from {env} to {output} with deploy folder {deploy_folder}")
+    archive_venv(envlocation=env, output=output, deploy_folder=deploy_folder)
+    logger.info("Packaging complete!")
+
+
 if __name__ == '__main__':
-    #todo -- add commandline
-    archive_venv()
+    main()

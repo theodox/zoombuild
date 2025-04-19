@@ -7,6 +7,7 @@ from importlib.resources import files
 from io import StringIO
 import example
 import example.submodule
+import sys
 
 def main():
     res = files(__name__).joinpath(".env")#.read_text()
@@ -32,6 +33,7 @@ def main():
     print(example.submodule)
     example.submodule.poo()
     print(dir(example.submodule))
+
 if __name__ == "__main__":
     print (sys.argv)
     main()
