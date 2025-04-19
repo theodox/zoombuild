@@ -15,10 +15,6 @@ dev = [
     "pytest",
 ]
 
-
-[project.scripts]
-zip = "copier.py"
-
 [tool.ruff]
 line-length = 99
 

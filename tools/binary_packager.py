@@ -7,6 +7,7 @@ import zlib
 import compileall
 import logging
 import sys
+import shutil
 import configparser
 from io import StringIO
 from datetime import datetime
@@ -17,11 +18,16 @@ METADATA_FILE = 'environment.ini'
 DEPLOY_KEY = 'deploy'
 FOLDER_KEY = 'folder'
 CHECKSUM_KEY = 'checksum'
+ZIP_KEY = 'archive'
 
 logging.basicConfig()
 logger = logging.getLogger("zoombuild")
 logger.setLevel(logging.INFO)
 
+
+# this script is included
+# as the __main__ of the 
+# binary zip
 unzipper = f"""
 import os
 import zipfile
@@ -36,7 +42,6 @@ with zipfile.ZipFile(zip, "r") as archive:
     with archive.open('{METADATA_FILE}', 'r') as handle:
         data = handle.read().decode('utf-8')
         cfg.read_string(data)
-    print (cfg)
     deploy_path = cfg['{DEPLOY_KEY}']['{FOLDER_KEY}']
     checksum = cfg['{DEPLOY_KEY}']['{CHECKSUM_KEY}']
         
@@ -57,6 +62,7 @@ else:
         print ("dependencies have changed, updating deployment")
         shutil.rmtree(deploy_path)
         shutil.unpack_archive(zip, extract_dir = deploy_path)
+        sys.exit(0)
 """
 
 
@@ -144,12 +150,14 @@ def archive_venv(envlocation = ".venv", output = "./env.zip", deploy_folder = "d
             }
             cfg [DEPLOY_KEY] = {
                 FOLDER_KEY: deploy_folder,
-                CHECKSUM_KEY: checksum
+                CHECKSUM_KEY: checksum,
+                ZIP_KEY: os.path.basename(output)
             }
 
             tmp = StringIO()
             cfg.write(tmp)
             archive.writestr(METADATA_FILE, tmp.getvalue())
+
 
     except Exception as e:
         logger.exception(e)
@@ -159,4 +167,5 @@ def archive_venv(envlocation = ".venv", output = "./env.zip", deploy_folder = "d
     
 
 if __name__ == '__main__':
+    #todo -- add commandline
     archive_venv()
