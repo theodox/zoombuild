@@ -1,2 +1,0 @@
-def poo():
-    print ('pppppoooooo')

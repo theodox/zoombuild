@@ -113,28 +113,20 @@ wheels = [
 [[package]]
 name = "zoombuild"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
-    { name = "python-dotenv" },
-    { name = "tqdm" },
-]
-
-[package.dev-dependencies]
-dev = [
     { name = "click" },
     { name = "pytest" },
+    { name = "python-dotenv" },
     { name = "ruff" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "python-dotenv", specifier = ">=1.1" },
-    { name = "tqdm", specifier = ">=4.67.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "pytest" },
+    { name = "python-dotenv", specifier = ">=1.1" },
     { name = "ruff", specifier = ">=0.11.4" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]

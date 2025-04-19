@@ -11,10 +11,6 @@ requires-python = ">=3.13"
 dependencies = [
 	"python-dotenv>=1.01",
 	"tqdm>=4.67.1",
-]
-
-[dependency-groups]
-dev = [
     "ruff>=0.11.4",
     "pytest",
     "click>=8.1.8",
@@ -28,4 +24,5 @@ line-length = 99
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [project.scripts]
-zoombuild-package = "zoombuild.tools.binary_packager:main"
+zb-package = "zoombuild.tools.binary_packager:main"
+zb-test = "zoombuild.tools.tests:main"
