@@ -36,26 +36,26 @@ The binary packager is a command-line tool that packages a virtual environment i
 
 ```powershell
 # Package the current virtual environment with default settings
-zoombuild-package
+zb-package
 
 # Show help and available options
-zoombuild-package --help
+zb-package --help
 ```
 
 #### Configuration Options
 
 ```powershell
 # Specify a custom virtual environment path
-zoombuild-package --env "custom_venv"
+zb-package --env "custom_venv"
 
 # Specify a custom output file
-zoombuild-package --output "deployment/app.zip"
+zb-package --output "deployment/app.zip"
 
 # Specify a custom deployment folder name
-zoombuild-package --deploy-folder "app_environment"
+zb-package --deploy-folder "app_environment"
 
 # Enable verbose logging
-zoombuild-package --verbose
+zb-package --verbose
 ```
 
 #### Common Scenarios
