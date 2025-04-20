@@ -48,7 +48,11 @@ def compile_tree(project: PyProject, zipname, optimize=1, filter=_default_filter
     if not zipname:
         zipname = Path(project.project_root) / f"{project.name}.zip"
 
-    source_tree = Path(project.find_package_dir())
+    _src = project.find_package_dir()
+    if not _src:
+        # potential future work: what to do with flat projects?
+        raise RuntimeError(f"{project.name} does not specify a source directory")
+    source_tree = Path(_src)
     logger.info(f"Compiling {project.project_file} to {zipname.name}")
     if not source_tree.exists():
         raise RuntimeError(f"Could not find source directory in {project.name}")

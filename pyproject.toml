@@ -27,4 +27,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [project.scripts]
 zb-package = "zoombuild.tools.binary_packager:main"
 zb-python = "zoombuild.tools.python_packager:main"
-zb-test = "zoombuild.tools.tests:main"
+zb-self-test = "zoombuild.tools.self_test:main"
+zb-test = "zoombuild.tools.test_runner:main"
+
