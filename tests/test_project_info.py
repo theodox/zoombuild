@@ -1,12 +1,7 @@
 import os
-import zoombuild
-import zoombuild.tools
 from zoombuild.tools.project_info import PyProject
 
 TOML_TESTS = os.path.join(os.path.dirname(__file__), "project_examples")
-
-def test_zb():
-    assert (zoombuild.tools is not None)
 
 
 def test_project_from_pytest():
