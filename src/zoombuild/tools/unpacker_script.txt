@@ -9,7 +9,7 @@ this file can by unzipped by executing it like this:
 
     py <path_to_zip.zip>
 
-with the correct python {VERSION} interpreter
+with the correct python {PYTHON_VERSION} interpreter
 """
 
 zip = os.path.dirname(__file__)

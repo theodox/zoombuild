@@ -78,6 +78,14 @@ class PyProject:
     @property
     def description(self):
         return self.toml["project"]["description"]
+    
+    @property
+    def dependencies(self):
+        return self.toml["project"].get("dependencies", [])
+    
+    @property
+    def python_version(self):
+        return self.toml["project"].get("requires-python", None)
 
     def __repr__(self):
         return f"PyProject({self.project_file})"

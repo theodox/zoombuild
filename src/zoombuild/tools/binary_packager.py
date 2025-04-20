@@ -9,20 +9,11 @@ import logging
 import sys
 import configparser
 import click
-from io import StringIO
-from datetime import datetime
 import importlib.resources as resources
 
+
 from .project_info import PyProject
-
-
-__version__ = "0.1.4"
-
-METADATA_FILE = "environment.ini"
-DEPLOY_KEY = "deploy"
-FOLDER_KEY = "folder"
-CHECKSUM_KEY = "checksum"
-ZIP_KEY = "archive"
+from . import metadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,26 +28,18 @@ logger.addHandler(handler)
 # binary zip
 def generate_unzip_text():
     unzip_text = resources.files(__name__).joinpath("unpacker_script.txt").read_text()
-
-    readable_version, *_ = sys.version.split(" ")
-    return unzip_text.format(
-        METADATA_FILE=METADATA_FILE,
-        VERSION=readable_version,
-        DEPLOY_KEY=DEPLOY_KEY,
-        FOLDER_KEY=FOLDER_KEY,
-        CHECKSUM_KEY=CHECKSUM_KEY,
-    )
+    replacements = metadata.project_keys()
+    return unzip_text.format(**replacements)
 
 
 def validate_zip(checksum, zip):
     with zipfile.ZipFile(zip, "r") as archive:
         parser = configparser.ConfigParser()
-        with archive.open(METADATA_FILE, "r") as cs:
+        with archive.open(metadata.METADATA_FILE, "r") as cs:
             data = cs.read().decode("utf-8")
             parser.read_string(data)
-            zip_checksum = parser[DEPLOY_KEY][CHECKSUM_KEY]
-            archive_version = parser["metadata"]["version"]
-        return zip_checksum == checksum and archive_version == str(__version__)
+            zip_checksum = parser[metadata.DEPLOY_KEY][metadata.CHECKSUM_KEY]
+        return zip_checksum == checksum
 
 
 def collect_requirements(project: PyProject):
@@ -83,39 +66,6 @@ def _precompute_file_count(directory):
     for _, dirs, files in os.walk(directory):
         total_items += len(files)
     return total_items
-
-
-def _generate_ini(project, output, deploy_folder, checksum):
-    """
-    Returns a string in INI format with metadata about this build.
-
-    The key functional part of the metadata is the final section,
-    which includes the checksum for the requirements.txt.  This
-    will be consumed by the unzipper function in the zip files __main__
-    method
-    """
-    cfg = configparser.ConfigParser()
-    cfg["project"] = {
-        "name": project.name,
-        "version": project.version,
-    }
-    cfg["build"] = {
-        "created": datetime.now(),
-        "machine": os.getenv("COMPUTERNAME", "unknown"),
-        "user": os.getenv("USERNAME", "unknown"),
-        "version": __version__,
-        "tool": __name__,
-        "python": sys.version,
-    }
-    cfg[DEPLOY_KEY] = {
-        FOLDER_KEY: deploy_folder,
-        CHECKSUM_KEY: checksum,
-        ZIP_KEY: os.path.basename(output),
-    }
-
-    tmp = StringIO()
-    cfg.write(tmp)
-    return tmp.getvalue()
 
 
 def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
@@ -167,8 +117,10 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
                 archive.writestr("requirements.txt", requirements)
                 progress.update(1)
 
-                INI_text = _generate_ini(project, output, deploy_folder, checksum)
-                archive.writestr(METADATA_FILE, INI_text)
+                INI_text = metadata.create_binary_metadata(
+                    project, output, deploy_folder, checksum
+                )
+                archive.writestr(metadata.METADATA_FILE, INI_text)
                 progress.update(1)
                 progress.update(1)
             progress.close()
