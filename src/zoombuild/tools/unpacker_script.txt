@@ -1,0 +1,41 @@
+import os
+import zipfile
+import shutil
+import sys
+import configparser
+
+"""
+this file can by unzipped by executing it like this:
+
+    py <path_to_zip.zip>
+
+with the correct python {VERSION} interpreter
+"""
+
+zip = os.path.dirname(__file__)
+cfg = configparser.ConfigParser()
+with zipfile.ZipFile(zip, "r") as archive:
+    with archive.open('{METADATA_FILE}', 'r') as handle:
+        data = handle.read().decode('utf-8')
+        cfg.read_string(data)
+    deploy_path = cfg['{DEPLOY_KEY}']['{FOLDER_KEY}']
+    checksum = cfg['{DEPLOY_KEY}']['{CHECKSUM_KEY}']
+        
+if not os.path.isdir(deploy_path):
+    print ("fresh deployment, unpacking into " + deploy_path)
+    shutil.unpack_archive(zip, deploy_path)
+    sys.exit(0)
+else:
+    parser = configparser.ConfigParser()
+    checksum_file = os.path.join(deploy_path, '{METADATA_FILE}')
+    parser.read(checksum_file)
+    saved_checksum = parser['{DEPLOY_KEY}']['{CHECKSUM_KEY}']
+    print("zip checksum", checksum, "disk checksum", saved_checksum)
+    if (checksum == saved_checksum):
+        print ("dependencies unchanged")
+        sys.exit(0)
+    else:
+        print ("dependencies have changed, updating deployment")
+        shutil.rmtree(deploy_path)
+        shutil.unpack_archive(zip, extract_dir = deploy_path)
+        sys.exit(0)
