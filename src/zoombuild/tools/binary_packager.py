@@ -37,7 +37,7 @@ logger.addHandler(handler)
 # binary zip
 def generate_unzip_text():
     unzip_text = resources.files(__name__).joinpath("unpacker_script.txt").read_text()
-    
+
     readable_version, *_ = sys.version.split(" ")
     return unzip_text.format(
         METADATA_FILE=METADATA_FILE,
@@ -105,7 +105,7 @@ def _generate_ini(project, output, deploy_folder, checksum):
         "user": os.getenv("USERNAME", "unknown"),
         "version": __version__,
         "tool": __name__,
-        "python": sys.version
+        "python": sys.version,
     }
     cfg[DEPLOY_KEY] = {
         FOLDER_KEY: deploy_folder,
@@ -125,7 +125,7 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
     venv_site_packages = venv / "Lib" / "site-packages"
 
     if not output:
-        output = os.path.join(".", project.name + "_binaries.zip")
+        output = os.path.join(project.project_root, project.name + "_binaries.zip")
 
     target_zip = os.path.abspath(os.path.expanduser(output))
     requirements, checksum = collect_requirements(project)
