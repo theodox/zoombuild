@@ -16,6 +16,31 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
+
+def create_test_runner(prj, test_folder):
+    test_env = os.environ.copy()
+    test_env['VIRTUAL_ENV'] = str(prj.find_virtualenv())
+    logger.debug(f"Running tests in: '{test_folder}")
+    runner = subprocess.Popen(
+        ["uv", "run", "pytest", str(test_folder)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        cwd=prj.project_root, env=test_env
+    )
+    
+    return runner
+
+def sync_target_project(prj):
+    sync_proc = subprocess.Popen(
+        ["uv", "sync"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        cwd=prj.project_root
+    )
+    sync_proc.wait(timeout=120)
+    if sync_proc.returncode != 0:
+        logger.error(f"Sync failed with error code {sync_proc.returncode}")
+        stdout, stderr = sync_proc.communicate()
+        logger.error(f"stdout: {stdout.decode()}")
+        logger.error(f"stderr: {stderr.decode()}")
+        sys.exit(sync_proc.returncode)
+
 @click.command(help="Run all tests")
 @click.argument("project")
 @click.option("--verbose", is_flag=True, help="Increase logging verbosity")
@@ -71,27 +96,3 @@ def main(project, verbose, test_dir):
 
     logger.info("\n" + stdout.decode())
     sys.exit(0)
-
-def create_test_runner(prj, test_folder):
-    test_env = os.environ.copy()
-    test_env['VIRTUAL_ENV'] = str(prj.find_virtualenv())
-    logger.debug(f"Running tests in: '{test_folder}")
-    runner = subprocess.Popen(
-        ["uv", "run", "pytest", str(test_folder)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        cwd=prj.project_root, env=test_env
-    )
-    
-    return runner
-
-def sync_target_project(prj):
-    sync_proc = subprocess.Popen(
-        ["uv", "sync"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        cwd=prj.project_root
-    )
-    sync_proc.wait(timeout=120)
-    if sync_proc.returncode != 0:
-        logger.error(f"Sync failed with error code {sync_proc.returncode}")
-        stdout, stderr = sync_proc.communicate()
-        logger.error(f"stdout: {stdout.decode()}")
-        logger.error(f"stderr: {stderr.decode()}")
-        sys.exit(sync_proc.returncode)

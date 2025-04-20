@@ -1,19 +1,19 @@
-import zipfile
-import tqdm
+import compileall
+import configparser
+import importlib.resources as resources
+import logging
 import os
 import pathlib
 import subprocess
-import zlib
-import compileall
-import logging
 import sys
-import configparser
+import zipfile
+import zlib
+
 import click
-import importlib.resources as resources
+import tqdm
 
-
-from .project_info import PyProject
 from . import metadata
+from .project_info import PyProject
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -156,6 +156,3 @@ def main(project, output, deploy_folder, verbose):
 
     archive_venv(prj, output=output, deploy_folder=deploy_folder)
 
-
-if __name__ == "__main__":
-    main()
