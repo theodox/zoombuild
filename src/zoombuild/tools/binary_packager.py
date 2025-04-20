@@ -125,11 +125,11 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
     venv_site_packages = venv / "Lib" / "site-packages"
 
     if not output:
-        output = os.path.join(project.project_root, project.name + "_binaries.zip")
+        output = pathlib.Path(project.project_root) / f"{project.name}_binaries.zip"
 
-    target_zip = os.path.abspath(os.path.expanduser(output))
+    target_zip = pathlib.Path(output).expanduser().resolve()
     requirements, checksum = collect_requirements(project)
-    if os.path.exists(target_zip):
+    if target_zip.exists():
         logger.info("comparing dependencies")
         if validate_zip(checksum, target_zip):
             # this means we don't need to re-vendor
@@ -137,7 +137,7 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
             sys.exit(0)
         else:
             logger.warning("dependencies or version have changed")
-            os.remove(target_zip)
+            target_zip.unlink()
 
     _precompile_bytecode(venv_site_packages)
 
@@ -146,14 +146,15 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
             file_total = _precompute_file_count(venv_site_packages)
             with tqdm.tqdm(total=file_total, desc="copying", unit=" files") as progress:
                 for root, _, files in os.walk(venv_site_packages):
-                    if root == str(venv_site_packages):
+                    root_path = pathlib.Path(root)
+                    if root_path == venv_site_packages:
                         continue
-                    if root == str(venv_site_packages / "__pycache__"):
+                    if root_path == venv_site_packages / "__pycache__":
                         continue
                     for f in files:
-                        full_path = pathlib.Path(root, f)
+                        full_path = root_path / f
                         archive_path = full_path.relative_to(venv_site_packages)
-                        archive.write(os.path.join(root, f), archive_path)
+                        archive.write(full_path, archive_path)
                         progress.update(1)
                         logger.debug(f)
 
@@ -174,8 +175,8 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
 
     except Exception as e:
         logger.exception(e)
-        logger.warning("build failed, removing {target_zip}")
-        os.remove(target_zip)
+        logger.warning(f"build failed, removing {target_zip}")
+        target_zip.unlink()
 
     logger.info(f"built {target_zip}")
     sys.exit(0)
@@ -183,10 +184,8 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
 
 @click.command(help="Package virtual environment into a deployable zip file")
 @click.argument("project")
-@click.option("--output", default=None, help="Output path for the zip file (default: ./env.zip)")
-@click.option(
-    "--deploy-folder", default="deploy", help="Target folder name for deployment (default: deploy)"
-)
+@click.option("--output", default=None, help="Output path for the zip file")
+@click.option("--deploy-folder", default="deploy", help="Target folder name for deployment")
 @click.option("--verbose", is_flag=True, help="Increase logging verbosity")
 def main(project, output, deploy_folder, verbose):
     """
@@ -197,10 +196,11 @@ def main(project, output, deploy_folder, verbose):
     """
     if verbose:
         logger.setLevel(logging.DEBUG)
-    if not os.path.exists(project):
-        raise ValueError("Project {project} not found")
+    project_path = pathlib.Path(project)
+    if not project_path.exists():
+        raise ValueError(f"Project {project} not found")
 
-    prj = PyProject(project)
+    prj = PyProject(project_path)
 
     archive_venv(prj, output=output, deploy_folder=deploy_folder)
 
