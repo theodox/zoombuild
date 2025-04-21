@@ -16,22 +16,32 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-
 def create_test_runner(prj, test_folder):
     test_env = os.environ.copy()
-    test_env['VIRTUAL_ENV'] = str(prj.find_virtualenv())
+    test_env["VIRTUAL_ENV"] = str(prj.find_virtualenv())
     logger.debug(f"Running tests in: '{test_folder}")
+
+    # this could probably be more elegant.  It looks like we need the
+    # '--with pytest pytest' to ensure that we get the pytest runner
+    # inside the target project's venv -- if you do the more straightforward
+    # 'uv run pytest' it seems to default to to runner for this project,
+    # which would lead to weirdness when the target project is on a different
+    # version of python
     runner = subprocess.Popen(
-        ["uv", "run", "pytest", str(test_folder)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        cwd=prj.project_root, env=test_env
+        ["uv", "run", "--with", "pytest", "pytest", test_folder],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=test_env,
+        cwd=prj.project_root,
+        shell=True,
     )
-    
+
     return runner
+
 
 def sync_target_project(prj):
     sync_proc = subprocess.Popen(
-        ["uv", "sync"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        cwd=prj.project_root
+        ["uv", "sync"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=prj.project_root
     )
     sync_proc.wait(timeout=120)
     if sync_proc.returncode != 0:
@@ -40,6 +50,7 @@ def sync_target_project(prj):
         logger.error(f"stdout: {stdout.decode()}")
         logger.error(f"stderr: {stderr.decode()}")
         sys.exit(sync_proc.returncode)
+
 
 @click.command(help="Run all tests")
 @click.argument("project")
@@ -69,7 +80,7 @@ def main(project, verbose, test_dir):
                     break
             if not _test:
                 raise RuntimeError(f"Could not find test directory in {prj.name}")
-    
+
     test_folder = Path(_test)
     if not test_folder.exists():
         raise RuntimeError(f"Could not find test directory in {prj.name}")
