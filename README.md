@@ -13,15 +13,9 @@ ZoomBuild is a packaging tool for creating deployable Python environments. It bu
 
 ZoomBuild uses [uv](https://github.com/astral-sh/uv) for dependency management. To set up a development environment:
 
-```powershell
-# Clone the repository
-git clone https://github.com/yourusername/zoombuild.git
+```
 cd zoombuild
-
-# Create and activate a virtual environment with uv
 uv venv
-
-# Install the package in development mode with dev dependencies
 uv pip install -e .
 uv pip install --dev
 ```
