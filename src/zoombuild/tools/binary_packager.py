@@ -8,6 +8,7 @@ import subprocess
 import sys
 import zipfile
 import zlib
+import platform
 
 import click
 import tqdm
@@ -75,10 +76,15 @@ def archive_venv(project: PyProject, output=None, deploy_folder="deploy"):
     venv_site_packages = venv / "Lib" / "site-packages"
 
     if not output:
-        output = pathlib.Path(project.project_root) / f"{project.name}_binaries.zip"
+        platform_string = platform.system().lower()
+        output = pathlib.Path(project.project_root) / f"{project.name}.bin.{platform_string}.zip"
 
     target_zip = pathlib.Path(output).expanduser().resolve()
     requirements, checksum = collect_requirements(project)
+    
+    logger.info(f"syncing virtual environment {venv}...")
+    project.sync()
+
     if target_zip.exists():
         logger.info("comparing dependencies")
         if validate_zip(checksum, target_zip):

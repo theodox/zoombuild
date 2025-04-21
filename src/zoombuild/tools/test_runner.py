@@ -39,19 +39,6 @@ def create_test_runner(prj, test_folder):
     return runner
 
 
-def sync_target_project(prj):
-    sync_proc = subprocess.Popen(
-        ["uv", "sync"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=prj.project_root
-    )
-    sync_proc.wait(timeout=120)
-    if sync_proc.returncode != 0:
-        logger.error(f"Sync failed with error code {sync_proc.returncode}")
-        stdout, stderr = sync_proc.communicate()
-        logger.error(f"stdout: {stdout.decode()}")
-        logger.error(f"stderr: {stderr.decode()}")
-        sys.exit(sync_proc.returncode)
-
-
 @click.command(help="Run all tests")
 @click.argument("project")
 @click.option("--verbose", is_flag=True, help="Increase logging verbosity")
@@ -86,7 +73,7 @@ def main(project, verbose, test_dir):
         raise RuntimeError(f"Could not find test directory in {prj.name}")
 
     logger.info(f"syncing dependencies for {prj.name}...")
-    sync_target_project(prj)
+    prj.sync(dev=False)
     logger.info("sync complete")
 
     runner = create_test_runner(prj, test_folder)

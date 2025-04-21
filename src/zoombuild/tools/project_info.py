@@ -1,6 +1,6 @@
 import tomli
 import os
-
+import subprocess
 
 class PyProject:
     def __init__(self, project_path):
@@ -113,6 +113,24 @@ class PyProject:
         tokens = list(path_segments)
         tokens.insert(0, self.project_root)
         return( os.path.join(*tokens))
+
+    def sync(self, dev = False):    
+        """
+        Sync the project with the virtual environment.
+        """
+        venv = self.find_virtualenv()
+        if not os.path.exists(venv):
+            raise RuntimeError(f"Virtual environment not found at {venv}")
+        
+        env = os.environ.copy()
+        env["VIRTUAL_ENV"] = venv
+        sync_cmd = ["uv", "sync", "--no-install-project"]
+        if dev:
+            sync_cmd.append("--dev")
+        else:
+            sync_cmd.append("--no-dev")
+        return subprocess.check_output(sync_cmd, cwd=self.project_root, env=env) == 0
+            
 
     @property
     def name(self):

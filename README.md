@@ -34,9 +34,9 @@ The binary packager is a command-line tool that packages a virtual environment i
 
 #### Basic Usage
 
-```powershell
-# Package the current virtual environment with default settings
-zb-package
+```
+# Package a project virtualenv with default settings
+uv run zb-package  path/to/target/pyproject.toml
 
 # Show help and available options
 zb-package --help
@@ -44,18 +44,17 @@ zb-package --help
 
 #### Configuration Options
 
-```powershell
-# Specify a custom virtual environment path
-zb-package --env "custom_venv"
-
+```
 # Specify a custom output file
-zb-package --output "deployment/app.zip"
+uv run zb-package --output "deployment/app.zip"
 
-# Specify a custom deployment folder name
-zb-package --deploy-folder "app_environment"
+# Specify a custom deployment folder name 
+# (this is the relative path to which the zipped 
+# dependencies will unpack)
+uv run zb-package --deploy-folder "app_environment"
 
 # Enable verbose logging
-zb-package --verbose
+uv run zb-package --verbose
 ```
 
 #### Common Scenarios

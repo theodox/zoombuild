@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import shutil
 import zipfile
 from pathlib import Path
@@ -20,7 +21,7 @@ logger.addHandler(handler)
 
 def _default_filter(pth):
     pPth = Path(pth)
-    return pPth.is_dir() or pPth.suffix == ".py"
+    return (pPth.is_dir() or pPth.suffix == ".py") and not pPth.name.startswith(".")
 
 
 def write_metadata(archive, project):
@@ -44,14 +45,21 @@ def find_resource_files(source_tree):
             yield full_file, relpath
 
 
-def compile_tree(project: PyProject, zipname, optimize=1, filter=_default_filter):
+def compile_tree(project: PyProject, source_dir, zipname, optimize=1, filter=_default_filter):
     if not zipname:
         zipname = Path(project.project_root) / f"{project.name}.zip"
 
-    _src = project.find_package_dir()
+    if source_dir:
+        _src = source_dir
+    else:
+        _src = project.find_package_dir()
+
     if not _src:
         # potential future work: what to do with flat projects?
+        # you can specify a manual source dir, but it's messy and error prone
+        # because there's so much extra stuff in there that looks like a resource file
         raise RuntimeError(f"{project.name} does not specify a source directory")
+    
     source_tree = Path(_src)
     logger.info(f"Compiling {project.project_file} to {zipname.name}")
     if not source_tree.exists():
@@ -80,18 +88,19 @@ def compile_tree(project: PyProject, zipname, optimize=1, filter=_default_filter
 
 @click.command(help="Package Python project into a distributable zip file")
 @click.argument("project")
+@click.option("--source-dir", default=None, help="Source directory to compile")
 @click.option(
     "--output",
     default=None,
     help="Output path for the zip file",
 )
-@click.option("--verbose", is_flag=True, help="Increase logging verbosity")
 @click.option(
     "--optimize",
     default=1,
     help="Optimize compiled output (default = 1, strips asserts and __DEBUG__)",
 )
-def main(project, output, optimize, verbose):
+@click.option("--verbose", is_flag=True, help="Increase logging verbosity")
+def main(project, source_dir,  output, optimize, verbose):
     if verbose:
         logger.setLevel(logging.DEBUG)
     project_path = Path(project)
@@ -99,4 +108,4 @@ def main(project, output, optimize, verbose):
         raise ValueError(f"Project {project} not found")
 
     prj = PyProject(project_path)
-    compile_tree(prj, output, optimize)
+    compile_tree(prj, source_dir, output, optimize)
