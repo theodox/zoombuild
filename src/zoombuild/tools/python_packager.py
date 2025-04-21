@@ -4,7 +4,7 @@ import sys
 import shutil
 import zipfile
 from pathlib import Path
-
+import subprocess
 import click
 import tqdm
 
@@ -35,15 +35,23 @@ def delete_caches(source_tree):
         shutil.rmtree(d)
 
 
-def find_resource_files(source_tree):
-    for root, _, files in os.walk(source_tree):
-        for f in files:
-            if f.endswith(".pyc") or f.endswith(".py"):
-                continue
-            full_file = Path(root) / f
-            relpath = full_file.relative_to(source_tree)
-            yield full_file, relpath
+def create_compiler(prj, source_tree, optimize=1):
+    test_env = os.environ.copy()
+    test_env["VIRTUAL_ENV"] = str(prj.find_virtualenv())
 
+    # Note that we use the -b option to compile in the legacy
+    # name/location format instead of in __pycache__ directories
+    # This matches the result of using PyZipFile.writepy()
+    runner = subprocess.Popen(
+        ["uv", "run", "python", "-m", "compileall", "-b", "-o", str(optimize), str(source_tree)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=test_env,
+        cwd=prj.project_root,
+        shell=True,
+    )
+
+    return runner
 
 def compile_tree(project: PyProject, source_dir, zipname, optimize=1, filter=_default_filter):
     if not zipname:
@@ -68,17 +76,27 @@ def compile_tree(project: PyProject, source_dir, zipname, optimize=1, filter=_de
     delete_caches(source_tree)
     logger.info("Deleted python caches")
 
+    # it would be nice to just use PyZipFile.writepy for these
+    # but we need to run the compiler in the target project's venv
+    # so we subprocess it and then do a copy
+
+    compiler = create_compiler(project, source_tree, optimize=optimize)
+    stdout, stderr = compiler.communicate()
+    if compiler.returncode != 0:
+        logger.error(f"Compiler failed: {stderr.decode()}")
+        sys.exit(1)
+
     with zipfile.PyZipFile(zipname, "w", optimize=optimize) as archive:
-        total = len(list(source_tree.rglob("*.*"))) - 1
-        with tqdm.tqdm(total=total, unit="files", desc="Compiling") as progress:
-            for dir in source_tree.iterdir():
-                archive.writepy(dir, filterfunc=filter)
+        all_files = set (source_tree.rglob("*.*"))
+        py_files = set (source_tree.rglob("*.py"))
+        files_to_copy = all_files - py_files
+        logger.info(f"Compiled {len(py_files)} python files")
+        with tqdm.tqdm(total=len(files_to_copy), unit=" files", desc="Archiving") as progress:
+            for file in files_to_copy:
+                relpath = file.relative_to(source_tree)
+                archive.write(file, relpath)
                 progress.update(1)
-
-            for resource_file, relpath in find_resource_files(source_tree):
-                archive.write(resource_file, relpath)
-                progress.update(1)
-
+            
             write_metadata(archive, project)
             progress.update(1)
             progress.close()
