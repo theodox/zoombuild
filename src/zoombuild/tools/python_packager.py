@@ -38,10 +38,12 @@ def delete_caches(source_tree):
 def create_compiler(prj, source_tree, optimize=1):
     test_env = os.environ.copy()
     test_env["VIRTUAL_ENV"] = str(prj.find_virtualenv())
-
+    # it would be nice to just use PyZipFile.writepy() here, but 
+    # that would execute in our process and not the target venv
+    # and might compile to the wrong python version.
     # Note that we use the -b option to compile in the legacy
-    # name/location format instead of in __pycache__ directories
-    # This matches the result of using PyZipFile.writepy()
+    # name/location format instead of in __pycache__ directories,
+    # which matches the result of using PyZipFile.writepy()
     runner = subprocess.Popen(
         ["uv", "run", "python", "-m", "compileall", "-b", "-o", str(optimize), str(source_tree)],
         stdout=subprocess.PIPE,
@@ -75,10 +77,6 @@ def compile_tree(project: PyProject, source_dir, zipname, optimize=1, filter=_de
 
     delete_caches(source_tree)
     logger.info("Deleted python caches")
-
-    # it would be nice to just use PyZipFile.writepy for these
-    # but we need to run the compiler in the target project's venv
-    # so we subprocess it and then do a copy
 
     compiler = create_compiler(project, source_tree, optimize=optimize)
     stdout, stderr = compiler.communicate()
